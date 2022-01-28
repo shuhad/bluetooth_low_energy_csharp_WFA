@@ -2,6 +2,7 @@
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace WindowsFormsApp1
@@ -9,7 +10,7 @@ namespace WindowsFormsApp1
     
     public partial class Form1 : Form
     {
-        SerialPort mySerialPort = new SerialPort("COM18", 57600, Parity.None, 8, StopBits.One);
+        SerialPort mySerialPort = new SerialPort("COM8", 57600, Parity.None, 8, StopBits.One);
         public Form1()
         {
             InitializeComponent();            
@@ -43,10 +44,23 @@ namespace WindowsFormsApp1
 
         private void submit_cmd_Click(object sender, EventArgs e)
         {
+            // BleuIO firmware version above v2.1.2 doesnot need to write enter seperately
+            // Therefore concating would work
+            // ex.  bytes = bytes.Concat(inputByte).ToArray();
+   
+            var enterCMD = new byte[] { 13 };
             byte[] bytes = Encoding.UTF8.GetBytes(tb_cmd.Text);
-            var inputByte = new byte[] { 13 };
-            bytes = bytes.Concat(inputByte).ToArray();
-            mySerialPort.Write(bytes, 0, bytes.Length);           
+            bytes = bytes.ToArray();
+            mySerialPort.Write(bytes, 0, bytes.Length);
+
+            // BleuIO firmware version below v2.1.2 needs to write enter seperately
+            // Following lines are for seperate enter command
+
+            Thread.Sleep(500);
+            enterCMD = enterCMD.ToArray();
+            mySerialPort.Write(enterCMD, 0, enterCMD.Length);
+
+
         }
 
         private void btn_disconnect_Click(object sender, EventArgs e)
